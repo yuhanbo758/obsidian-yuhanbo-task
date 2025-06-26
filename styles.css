@@ -1,0 +1,412 @@
+/* 任务管理与番茄时钟插件的基本样式 */
+
+/* 任务管理与番茄时钟插件样式 */
+
+/* 全局样式 */
+.yuhanbo-settings-container h2 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 5px;
+}
+
+/* 侧边栏工具样式 */
+.yuhanbo-task-sidebar {
+    padding: 10px;
+}
+
+.yuhanbo-task-sidebar-button {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.yuhanbo-task-sidebar-button:hover {
+    opacity: 0.9;
+}
+
+/* 番茄时钟状态栏样式 */
+.yuhanbo-pomodoro-status {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.yuhanbo-pomodoro-status:hover {
+    color: var(--interactive-accent);
+}
+
+.yuhanbo-pomodoro-icon {
+    margin-right: 5px;
+}
+
+/* 番茄时钟样式 */
+.yuhanbo-pomodoro-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.yuhanbo-pomodoro-timer {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.yuhanbo-pomodoro-phase {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.yuhanbo-pomodoro-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 弹窗通用样式 */
+.yuhanbo-task-selection-modal,
+.yuhanbo-task-progress-modal,
+.yuhanbo-task-modal,
+.yuhanbo-task-list-modal {
+    width: 500px;
+    max-width: 90vw;
+}
+
+.yuhanbo-search-container {
+    margin-bottom: 15px;
+}
+
+.yuhanbo-search-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.yuhanbo-button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.yuhanbo-primary-button,
+.yuhanbo-secondary-button,
+.yuhanbo-cancel-button,
+.yuhanbo-delete-button,
+.yuhanbo-edit-button,
+.yuhanbo-complete-button,
+.yuhanbo-select-button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.yuhanbo-primary-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.yuhanbo-primary-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.yuhanbo-secondary-button {
+    background-color: var(--background-secondary-alt);
+    color: var(--text-normal);
+}
+
+.yuhanbo-secondary-button:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.yuhanbo-cancel-button {
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+}
+
+.yuhanbo-cancel-button:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.yuhanbo-delete-button {
+    background-color: var(--text-error);
+    color: white;
+}
+
+.yuhanbo-delete-button:hover {
+    background-color: var(--text-error-hover);
+}
+
+.yuhanbo-edit-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.yuhanbo-complete-button {
+    background-color: var(--color-green);
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.yuhanbo-complete-button:hover {
+    opacity: 0.9;
+}
+
+.yuhanbo-select-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* 任务列表样式 */
+.yuhanbo-task-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.yuhanbo-no-tasks {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 20px;
+}
+
+.yuhanbo-task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.yuhanbo-task-item:last-child {
+    border-bottom: none;
+}
+
+.yuhanbo-task-item:hover {
+    background-color: var(--background-primary-alt);
+}
+
+.yuhanbo-task-info {
+    flex: 1;
+}
+
+.yuhanbo-task-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.yuhanbo-task-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 10px;
+}
+
+.yuhanbo-task-due-date,
+.yuhanbo-task-progress,
+.yuhanbo-task-execute-date {
+    white-space: nowrap;
+}
+
+.yuhanbo-task-execute-date {
+    color: var(--text-accent);
+    font-weight: 500;
+}
+
+/* 任务过期样式 */
+.yuhanbo-task-execute-date:has(+ :contains("已过期")) {
+    color: var(--text-error);
+}
+
+/* 今天执行样式 */
+.yuhanbo-task-execute-date:has(+ :contains("今天")) {
+    color: var(--text-success);
+    font-weight: bold;
+}
+
+.yuhanbo-task-type {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.yuhanbo-task-type-badge,
+.yuhanbo-task-cycle-badge {
+    font-size: 11px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background-color: var(--background-secondary-alt);
+}
+
+.yuhanbo-task-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* 任务表单样式 */
+.yuhanbo-task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.yuhanbo-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.yuhanbo-form-group label {
+    font-weight: 500;
+}
+
+.yuhanbo-input,
+.yuhanbo-textarea,
+.yuhanbo-select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+}
+
+.yuhanbo-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.yuhanbo-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yuhanbo-checkbox-label {
+    font-weight: normal;
+}
+
+/* 子任务样式 */
+.yuhanbo-ai-subtasks {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 15px;
+    background-color: var(--background-primary-alt);
+}
+
+.yuhanbo-subtasks-list {
+    margin-top: 10px;
+}
+
+.yuhanbo-subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+}
+
+.yuhanbo-subtask-checkbox {
+    margin: 0;
+}
+
+/* 任务进度更新弹窗样式 */
+.yuhanbo-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.yuhanbo-progress-slider {
+    width: 100%;
+}
+
+.yuhanbo-progress-value {
+    font-weight: bold;
+    text-align: center;
+}
+
+/* 标签页样式 */
+.yuhanbo-tab-container {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.yuhanbo-tab-button {
+    padding: 8px 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-normal);
+}
+
+.yuhanbo-tab-button:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.yuhanbo-active-tab {
+    border-bottom: 2px solid var(--interactive-accent);
+    font-weight: bold;
+}
+
+.yuhanbo-add-button {
+    margin-top: 15px;
+}
+
+/* 设置页面样式 */
+.yuhanbo-settings-container {
+    padding: 15px;
+}
+
+.yuhanbo-settings-section {
+    margin-bottom: 30px;
+}
+
+.yuhanbo-sound-file-setting {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 5px;
+    background-color: var(--background-primary-alt);
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+    .yuhanbo-task-selection-modal,
+    .yuhanbo-task-progress-modal,
+    .yuhanbo-task-modal,
+    .yuhanbo-task-list-modal {
+        width: 95vw;
+    }
+    
+    .yuhanbo-task-meta,
+    .yuhanbo-task-type {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .yuhanbo-button-container {
+        flex-direction: column;
+    }
+} 
