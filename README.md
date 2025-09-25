@@ -59,6 +59,9 @@
 - `打开一次性任务文件夹`：在 Obsidian 中打开一次性任务文件夹
 - `打开已完成任务文件夹`：在 Obsidian 中打开已完成任务文件夹
 
+## 许可证
+
+MIT
 
 
 ## 👨‍💻 作者信息
@@ -75,9 +78,9 @@
 
 - 🏠 [项目主页](https://www.sanrenjz.com)
 
-- 📚 [在线文档](https://wd.sanrenjz.com)（财经、代码和库文档等）
+- 📚 [在线文档](https://docs.sanrenjz.com)（财经、代码和库文档等）
 
-- 🛒 [插件商店](https://jy.sanrenjz.com)（个人开发的所有程序，包括开源和不开源）
+- 🛒 [插件商店](https://shop.sanrenjz.com)（个人开发的所有程序，包括开源和不开源）
 
 
 ## 联系我们
@@ -99,7 +102,3 @@ python 程序管理工具下载：[sanrenjz - 三人聚智-余汉波](https://ww
 ---
 **⭐ 如果这个项目对您有帮助，请给它一个 Star！**
 
-
-## 许可证
-
-MIT

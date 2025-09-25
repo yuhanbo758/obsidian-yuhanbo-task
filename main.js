@@ -149,6 +149,12 @@ class YuhanboTaskPlugin extends Plugin {
         
         // 加载所有任务
         await this.taskManager.loadTasks();
+        
+        // 清理过期的重复性任务
+        await this.taskManager.cleanupExpiredRepeatingTasks();
+        
+        // 启动定时清理机制
+        this.startDailyCleanupTimer();
     }
     
     async openTaskFolder(folderPath) {
@@ -209,10 +215,70 @@ class YuhanboTaskPlugin extends Plugin {
         if (this.pomodoroTimer) {
             this.pomodoroTimer.cleanup();
         }
+        
+        // 清理定时器
+        this.stopDailyCleanupTimer();
     }
     
     async saveSettings() {
         await this.saveData(this.settings);
+    }
+    
+    /**
+     * 启动每日定时清理机制
+     * 每天0点自动清理过期的重复性任务
+     */
+    startDailyCleanupTimer() {
+        // 清理之前的定时器（如果存在）
+        this.stopDailyCleanupTimer();
+        
+        // 计算到下一个0点的毫秒数
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const msUntilMidnight = tomorrow.getTime() - now.getTime();
+        
+        console.log(`定时清理将在 ${Math.round(msUntilMidnight / 1000 / 60)} 分钟后首次执行`);
+        
+        // 设置首次执行的定时器
+        this.cleanupTimer = setTimeout(() => {
+            this.performDailyCleanup();
+            
+            // 设置每24小时执行一次的定时器
+            this.cleanupInterval = setInterval(() => {
+                this.performDailyCleanup();
+            }, 24 * 60 * 60 * 1000); // 24小时
+            
+        }, msUntilMidnight);
+    }
+    
+    /**
+     * 停止定时清理机制
+     */
+    stopDailyCleanupTimer() {
+        if (this.cleanupTimer) {
+            clearTimeout(this.cleanupTimer);
+            this.cleanupTimer = null;
+        }
+        
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+        }
+    }
+    
+    /**
+     * 执行每日清理任务
+     */
+    async performDailyCleanup() {
+        try {
+            console.log('执行每日定时清理过期重复性任务');
+            await this.taskManager.cleanupExpiredRepeatingTasks();
+            console.log('每日定时清理完成');
+        } catch (error) {
+            console.error('每日定时清理失败:', error);
+        }
     }
     
     // 确认重置对话框
@@ -328,6 +394,7 @@ class PomodoroTimer {
         this.currentTask = null;
         this.audio = null;
         this.defaultAudio = new Audio(DEFAULT_SOUND); // 创建默认提示音
+        this.endTime = null; // 添加结束时间属性，用于基于系统时间的倒计时
         this.setupStatusBar();
         this.loadAudio();
     }
@@ -537,23 +604,29 @@ class PomodoroTimer {
     startWork() {
         this.state = PomodoroState.WORKING;
         this.timeRemaining = this.plugin.settings.workDuration * 60;
+        // 设置基于系统时间的结束时间
+        this.endTime = new Date(Date.now() + this.timeRemaining * 1000);
         this.startTimer();
-        new Notice(`番茄工作周期开始!${this.currentTask ? ` 任务: ${this.currentTask.title}` : ""}`);
+        new Notice(`番茄工作周期开始!${this.currentTask ? ` 任务: ${this.currentTask.title}` : ""} 将在 ${this.endTime.toLocaleTimeString()} 结束`);
     }
     
     startShortBreak() {
         this.state = PomodoroState.SHORT_BREAK;
         this.timeRemaining = this.plugin.settings.shortBreakDuration * 60;
+        // 设置基于系统时间的结束时间
+        this.endTime = new Date(Date.now() + this.timeRemaining * 1000);
         this.startTimer();
-        new Notice("短休息开始!");
+        new Notice(`短休息开始! 将在 ${this.endTime.toLocaleTimeString()} 结束`);
         this.playSound();
     }
     
     startLongBreak() {
         this.state = PomodoroState.LONG_BREAK;
         this.timeRemaining = this.plugin.settings.longBreakDuration * 60;
+        // 设置基于系统时间的结束时间
+        this.endTime = new Date(Date.now() + this.timeRemaining * 1000);
         this.startTimer();
-        new Notice("长休息开始!");
+        new Notice(`长休息开始! 将在 ${this.endTime.toLocaleTimeString()} 结束`);
         this.playSound();
     }
     
@@ -565,7 +638,9 @@ class PomodoroTimer {
         this.updateStatusBar();
         
         this.interval = setInterval(() => {
-            this.timeRemaining--;
+            // 基于系统时间计算剩余时间
+            const now = new Date();
+            this.timeRemaining = Math.max(0, Math.ceil((this.endTime - now) / 1000));
             this.updateStatusBar();
             
             if (this.timeRemaining <= 0) {
@@ -618,6 +693,9 @@ class PomodoroTimer {
             clearInterval(this.interval);
             this.interval = null;
         }
+        // 暂停时记录当前剩余时间
+        const now = new Date();
+        this.timeRemaining = Math.max(0, Math.ceil((this.endTime - now) / 1000));
         this.state = PomodoroState.PAUSED;
         this.updateStatusBar();
         new Notice("番茄钟已暂停");
@@ -625,6 +703,8 @@ class PomodoroTimer {
     
     resume() {
         if (this.state === PomodoroState.PAUSED && this.timeRemaining > 0) {
+            // 恢复时重新设置结束时间
+            this.endTime = new Date(Date.now() + this.timeRemaining * 1000);
             this.startTimer();
             new Notice("番茄钟已恢复");
         }
@@ -639,6 +719,7 @@ class PomodoroTimer {
         this.timeRemaining = 0;
         this.completedPomodoros = 0;
         this.currentTask = null;
+        this.endTime = null; // 清除结束时间
         this.updateStatusBar();
         new Notice("番茄钟已重置");
     }
@@ -1721,8 +1802,71 @@ class TaskManager {
     }
     
     getAllActiveTasks() {
-        // 返回所有未完成任务
-        return [...this.tasks.repeating, ...this.tasks.oneTime];
+        // 获取所有一次性任务（未完成的）
+        const oneTimeTasks = this.tasks.oneTime.filter(task => !task.isCompleted);
+        
+        // 获取重复性任务并应用过滤逻辑
+        const filteredRepeatingTasks = this.filterRepeatingTasksForSelection(this.tasks.repeating);
+        
+        return [...filteredRepeatingTasks, ...oneTimeTasks];
+    }
+    
+    /**
+     * 为任务选择过滤重复性任务
+     * 与TaskListModal中的filterRepeatingTasks逻辑保持一致
+     */
+    filterRepeatingTasksForSelection(tasks) {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        return tasks.filter(task => {
+            // 检查任务是否已过截止日期
+            if (task.dueDate && task.dueDate < todayStr) {
+                return false; // 过期任务不显示
+            }
+            
+            // 检查是否应该在今天显示
+            if (!this.isTaskDueToday(task, today)) {
+                return false; // 不是今天执行的任务不显示
+            }
+            
+            return true;
+        });
+    }
+    
+    /**
+     * 检查重复性任务是否应该在指定日期显示
+     * 与TaskListModal中的逻辑保持一致
+     */
+    isTaskDueToday(task, targetDate) {
+        if (!task.executeDate) return false;
+        
+        const executeDate = new Date(task.executeDate);
+        const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        const executeDateOnly = new Date(executeDate.getFullYear(), executeDate.getMonth(), executeDate.getDate());
+        
+        switch (task.cycle) {
+            case 'daily':
+                // 每日任务：如果执行日期<=今天，则显示
+                return executeDateOnly <= targetDateOnly;
+                
+            case 'weekly':
+                // 每周任务：检查是否是同一周几
+                return executeDate.getDay() === targetDate.getDay() && executeDateOnly <= targetDateOnly;
+                
+            case 'monthly':
+                // 每月任务：检查是否是同一天
+                return executeDate.getDate() === targetDate.getDate() && executeDateOnly <= targetDateOnly;
+                
+            case 'yearly':
+                // 每年任务：检查是否是同一月同一天
+                return executeDate.getMonth() === targetDate.getMonth() && 
+                       executeDate.getDate() === targetDate.getDate() && 
+                       executeDateOnly <= targetDateOnly;
+                
+            default:
+                return false;
+        }
     }
     
     async addTask(task) {
@@ -1930,8 +2074,8 @@ class TaskManager {
             // 如果没有已完成任务，直接返回
             if (this.tasks.completed.length === 0) {
                 console.log("【调试】没有已完成任务需要保存");
-            return;
-        }
+                return;
+            }
         
             // 确保目录存在
             if (!(await vault.adapter.exists(completedTasksPath))) {
@@ -1939,63 +2083,62 @@ class TaskManager {
                 await vault.createFolder(completedTasksPath);
             }
             
-            // 按日期和类型分组
-        const tasksByDateAndType = {};
-        
-            // 对任务进行分类
-            for (const task of this.tasks.completed) {
-            const date = task.completedDate || new Date().toISOString().split('T')[0];
-            const type = task.type === "repeating" ? "repeating" : "onetime";
+            // 获取今天的日期
+            const today = new Date().toISOString().split('T')[0];
             
-            const key = `${date}_${type}`;
-            if (!tasksByDateAndType[key]) {
-                tasksByDateAndType[key] = [];
+            // 只处理今天完成的任务
+            const todayTasks = this.tasks.completed.filter(task => {
+                const taskDate = task.completedDate || today;
+                return taskDate === today;
+            });
+            
+            if (todayTasks.length === 0) {
+                console.log("【调试】今天没有完成的任务需要保存");
+                return;
             }
-            tasksByDateAndType[key].push(task);
-        }
-        
-            // 保存每组任务
-        let totalSaved = 0;
-        let errors = 0;
-        
-        for (const [key, dateTasks] of Object.entries(tasksByDateAndType)) {
-            if (dateTasks.length === 0) continue;
             
-            // 解析日期和类型
-            const [date, type] = key.split('_');
-            const typeText = type === "repeating" ? "重复性任务" : "一次性任务";
+            // 按类型分组
+            const onetimeTasks = todayTasks.filter(task => task.type !== "repeating");
+            const repeatingTasks = todayTasks.filter(task => task.type === "repeating");
             
-                // 生成文件名和内容
-                const fileName = `${completedTasksPath}/completed_${type}_${date}.md`;
-            let content = `# 已完成${typeText} - ${date}\n\n`;
+            // 生成文件名和内容
+            const fileName = `${completedTasksPath}/completed_${today}.md`;
+            let content = `# 已完成任务 - ${today}\n\n`;
             
-                // 添加任务到内容中
-            for (const task of dateTasks) {
+            // 添加一次性任务
+            if (onetimeTasks.length > 0) {
+                content += `# 一次性任务\n\n`;
+                for (const task of onetimeTasks) {
                     try {
-                        console.log(`【调试】格式化已完成任务: ${task.title}`);
+                        console.log(`【调试】格式化已完成一次性任务: ${task.title}`);
                         content += this.formatTaskToMarkdown(task) + '\n\n';
                     } catch (formatError) {
                         console.error(`【错误】格式化已完成任务失败: ${task.title}`, formatError);
                     }
+                }
             }
             
-                // 保存文件
+            // 添加重复性任务
+            if (repeatingTasks.length > 0) {
+                content += `# 重复性任务\n\n`;
+                for (const task of repeatingTasks) {
+                    try {
+                        console.log(`【调试】格式化已完成重复性任务: ${task.title}`);
+                        content += this.formatTaskToMarkdown(task) + '\n\n';
+                    } catch (formatError) {
+                        console.error(`【错误】格式化已完成任务失败: ${task.title}`, formatError);
+                    }
+                }
+            }
+            
+            // 保存文件
             try {
                 await vault.adapter.write(fileName, content);
-                    console.log(`【成功】保存已完成${typeText}文件 (${dateTasks.length}个任务): ${fileName}`);
-                totalSaved += dateTasks.length;
-                } catch (writeError) {
-                    console.error(`【错误】写入已完成任务文件失败:`, writeError);
-                errors++;
+                console.log(`【成功】保存今日已完成任务文件 (${todayTasks.length}个任务): ${fileName}`);
+            } catch (writeError) {
+                console.error(`【错误】写入已完成任务文件失败:`, writeError);
             }
-        }
-        
-            // 显示保存结果
-        if (totalSaved > 0) {
-                console.log(`【完成】已保存 ${totalSaved} 个已完成任务${errors > 0 ? `，但有 ${errors} 组保存失败` : ''}`);
-        } else if (errors > 0) {
-                console.warn(`【警告】所有已完成任务保存失败`);
-            }
+            
         } catch (error) {
             console.error("【错误】保存已完成任务失败:", error);
         }
@@ -2009,54 +2152,56 @@ class TaskManager {
                 throw new Error("无效的任务对象或标题缺失");
             }
             
-            let markdown = `## ${task.title}\n`;
+            // 使用Obsidian自带的任务选框格式
+            const isCompleted = task.progress === 100 || task.status === 'completed';
+            let markdown = `- [${isCompleted ? 'x' : ' '}] ${task.title}\n`;
             
             // 添加基本信息
-            markdown += `ID: ${task.id || this.generateTaskId()}\n`;
-            markdown += `类型: ${task.type === "repeating" ? "重复任务" : "一次性任务"}\n`;
+            markdown += `  - ID: ${task.id || this.generateTaskId()}\n`;
+            markdown += `  - 类型: ${task.type === "repeating" ? "重复任务" : "一次性任务"}\n`;
             
             // 添加描述
             if (task.description) {
-                markdown += `描述: ${task.description}\n`;
+                markdown += `  - 描述: ${task.description}\n`;
             }
             
             // 添加进度
-            markdown += `进度: ${task.progress || 0}%\n`;
+            markdown += `  - 进度: ${task.progress || 0}%\n`;
             
             // 添加创建日期
             const createdDate = task.createdDate || new Date().toISOString().split('T')[0];
-            markdown += `创建日期: ${createdDate}\n`;
+            markdown += `  - 创建日期: ${createdDate}\n`;
             
             // 添加截止日期（一次性任务必需）
             if (task.type === "oneTime" || task.dueDate) {
-                markdown += `截止日期: ${task.dueDate}\n`;
+                markdown += `  - 截止日期: ${task.dueDate}\n`;
             }
             
             // 重复性任务特有的字段
             if (task.type === "repeating") {
                 if (task.cycle) {
-                    markdown += `周期: ${task.cycle}\n`;
+                    markdown += `  - 周期: ${task.cycle}\n`;
                 }
                 
                 if (task.cyclePeriod) {
-                    markdown += `周期单位: ${task.cyclePeriod}\n`;
+                    markdown += `  - 周期单位: ${task.cyclePeriod}\n`;
                 }
                 
                 if (task.executeDate) {
-                    markdown += `执行日期: ${task.executeDate}\n`;
+                    markdown += `  - 执行日期: ${task.executeDate}\n`;
                 }
             }
             
             // 添加标签
             if (task.tags && task.tags.length > 0) {
-                markdown += `标签: ${task.tags.join(', ')}\n`;
+                markdown += `  - 标签: ${task.tags.join(', ')}\n`;
             }
             
             // 添加子任务
             if (task.subTasks && task.subTasks.length > 0) {
-                markdown += `\n子任务:\n`;
+                markdown += `  - 子任务:\n`;
                 for (const subTask of task.subTasks) {
-                    markdown += `- [${subTask.completed ? 'x' : ' '}] ${subTask.text}\n`;
+                    markdown += `    - [${subTask.completed ? 'x' : ' '}] ${subTask.text}\n`;
                 }
             }
             
@@ -2113,23 +2258,131 @@ class TaskManager {
             console.error(`【错误】updateTask 找不到任务 ID: ${taskId}`);
             throw new Error(`未找到任务 ID: ${taskId}`);
         }
+        
         // 合并更新字段
         Object.assign(task, updates);
+        
         // 如果任务标记完成
         if (updates.isCompleted) {
-            // 从源列表移除
-            const list = task.type === 'repeating' ? this.tasks.repeating : this.tasks.oneTime;
-            const idx = list.findIndex(t => t.id === taskId);
-            if (idx !== -1) list.splice(idx, 1);
-            // 设置完成日期
-            task.completedDate = this.getBJDate().toISOString().split('T')[0];
-            this.tasks.completed.push(task);
-            console.log(`【调试】任务 ${taskId} 已移动到已完成列表`);
+            // 自动完成所有子任务
+            if (task.subTasks && task.subTasks.length > 0) {
+                console.log(`【调试】主任务完成，自动完成 ${task.subTasks.length} 个子任务`);
+                task.subTasks.forEach(subTask => {
+                    subTask.completed = true;
+                });
+            }
+            
+            const today = this.getBJDate().toISOString().split('T')[0];
+            
+            if (task.type === 'repeating') {
+                // 重复性任务：记录当期完成，更新下次执行日期
+                console.log(`【调试】重复性任务完成，记录当期完成状态`);
+                
+                // 创建当期完成记录
+                const completedInstance = {
+                    ...task,
+                    completedDate: today,
+                    currentPeriod: today, // 记录完成的是哪一期
+                    isCompleted: true,
+                    status: 'completed'
+                };
+                
+                // 添加到已完成列表
+                this.tasks.completed.push(completedInstance);
+                
+                // 重置原任务状态并更新下次执行日期
+                task.progress = 0;
+                task.isCompleted = false;
+                task.status = 'active';
+                
+                // 重置子任务状态
+                if (task.subTasks && task.subTasks.length > 0) {
+                    task.subTasks.forEach(subTask => {
+                        subTask.completed = false;
+                    });
+                }
+                
+                // 更新下次执行日期
+                await this.updateNextExecuteDate(task);
+                
+                console.log(`【调试】重复性任务 ${taskId} 当期完成，下次执行日期: ${task.executeDate}`);
+            } else {
+                // 一次性任务：从源列表移除，移动到已完成列表
+                const list = this.tasks.oneTime;
+                const idx = list.findIndex(t => t.id === taskId);
+                if (idx !== -1) list.splice(idx, 1);
+                
+                // 设置完成日期
+                task.completedDate = today;
+                this.tasks.completed.push(task);
+                console.log(`【调试】一次性任务 ${taskId} 已移动到已完成列表`);
+            }
         }
+        
         // 保存所有任务
         await this.saveTasks();
         console.log(`【调试】updateTask 保存完成: ${taskId}`);
         return task;
+    }
+    
+    // 更新重复性任务的下次执行日期
+    async updateNextExecuteDate(task) {
+        const bjNow = this.getBJDate();
+        
+        switch (task.cycle) {
+            case "daily":
+                // 每日任务：下次执行日期为明天
+                const tomorrow = new Date(bjNow);
+                tomorrow.setDate(bjNow.getDate() + 1);
+                task.executeDate = tomorrow.toISOString().split('T')[0];
+                break;
+                
+            case "weekly":
+                // 每周任务：下次执行日期为下周同一天
+                const nextWeek = new Date(bjNow);
+                nextWeek.setDate(bjNow.getDate() + 7);
+                task.executeDate = nextWeek.toISOString().split('T')[0];
+                break;
+                
+            case "monthly":
+                // 每月任务：下次执行日期为下月同一天
+                const nextMonth = new Date(bjNow);
+                nextMonth.setMonth(bjNow.getMonth() + 1);
+                task.executeDate = nextMonth.toISOString().split('T')[0];
+                break;
+                
+            case "yearly":
+                // 每年任务：下次执行日期为明年同一天
+                const nextYear = new Date(bjNow);
+                nextYear.setFullYear(bjNow.getFullYear() + 1);
+                task.executeDate = nextYear.toISOString().split('T')[0];
+                break;
+        }
+        
+        console.log(`【调试】${task.cycle}任务下次执行日期更新为: ${task.executeDate}`);
+    }
+    
+    // 清理过期的重复性任务
+    async cleanupExpiredRepeatingTasks() {
+        const today = this.getBJDate().toISOString().split('T')[0];
+        const initialCount = this.tasks.repeating.length;
+        
+        // 过滤掉已过截止日期的重复性任务
+        this.tasks.repeating = this.tasks.repeating.filter(task => {
+            if (task.dueDate && task.dueDate < today) {
+                console.log(`【调试】清理过期重复性任务: "${task.title}", 截止日期: ${task.dueDate}`);
+                return false;
+            }
+            return true;
+        });
+        
+        const removedCount = initialCount - this.tasks.repeating.length;
+        if (removedCount > 0) {
+            console.log(`【调试】清理了 ${removedCount} 个过期重复性任务`);
+            await this.saveTasks();
+        }
+        
+        return removedCount;
     }
 
     // 在TaskManager类中添加日期处理辅助方法
@@ -2163,38 +2416,40 @@ class TaskManager {
                 content = content.replace(/[\ufffd\uFFFD]/g, '');
             }
             
-            // 获取所有任务块 - 以标题"## "开始，到下一个标题或文件结束
-            const taskRegex = /## (.+?)\n([\s\S]*?)(?=\n## |$)/g;
+            // 获取所有任务块 - 以选框"- [ ]"或"- [x]"开始，到下一个任务或文件结束
+            const taskRegex = /- \[([x ])\] (.+?)\n([\s\S]*?)(?=\n- \[|$)/g;
             let match;
             
             while ((match = taskRegex.exec(content)) !== null) {
                 try {
-                    const taskTitle = match[1].trim();
-                    const taskContent = match[2].trim();
+                    const isCompleted = match[1] === 'x';
+                    const taskTitle = match[2].trim();
+                    const taskContent = match[3].trim();
                     
-                    console.log(`找到任务: "${taskTitle}"`);
+                    console.log(`找到任务: "${taskTitle}", 完成状态: ${isCompleted}`);
                     
-                    // 解析任务属性 - 使用正则表达式匹配各个属性
-                    const idMatch = taskContent.match(/ID: ([^\n]+)/);
-                    const typeMatch = taskContent.match(/类型: ([^\n]+)/);
-                    const descMatch = taskContent.match(/描述: ([\s\S]*?)(?=\n[^:\n]+ |$)/);
-                    const progressMatch = taskContent.match(/进度: (\d+)%/);
-                    const dueDateMatch = taskContent.match(/截止日期: ([^\n]+)/);
-                    const createDateMatch = taskContent.match(/创建日期: ([^\n]+)/);
-                    const cycleMatch = taskContent.match(/周期: ([^\n]+)/);
-                    const cyclePeriodMatch = taskContent.match(/周期单位: ([^\n]+)/);
-                    const executeDateMatch = taskContent.match(/执行日期: ([^\n]+)/);
-                    const tagsMatch = taskContent.match(/标签: ([^\n]+)/);
+                    // 解析任务属性 - 使用正则表达式匹配各个属性（注意缩进）
+                    const idMatch = taskContent.match(/- ID: ([^\n]+)/);
+                    const typeMatch = taskContent.match(/- 类型: ([^\n]+)/);
+                    const descMatch = taskContent.match(/- 描述: ([\s\S]*?)(?=\n  - |$)/);
+                    const progressMatch = taskContent.match(/- 进度: (\d+)%/);
+                    const dueDateMatch = taskContent.match(/- 截止日期: ([^\n]+)/);
+                    const createDateMatch = taskContent.match(/- 创建日期: ([^\n]+)/);
+                    const cycleMatch = taskContent.match(/- 周期: ([^\n]+)/);
+                    const cyclePeriodMatch = taskContent.match(/- 周期单位: ([^\n]+)/);
+                    const executeDateMatch = taskContent.match(/- 执行日期: ([^\n]+)/);
+                    const tagsMatch = taskContent.match(/- 标签: ([^\n]+)/);
                     
                     // 创建任务对象
                     const task = {
                         id: idMatch ? idMatch[1].trim() : this.generateTaskId(),
                         title: taskTitle,
                         description: descMatch ? descMatch[1].trim() : "",
-                        progress: progressMatch ? parseInt(progressMatch[1]) : 0,
+                        progress: isCompleted ? 100 : (progressMatch ? parseInt(progressMatch[1]) : 0),
                         type: typeMatch && typeMatch[1].includes("重复") ? "repeating" : "oneTime",
                         createdDate: createDateMatch ? createDateMatch[1].trim() : new Date().toISOString().split('T')[0],
-                        isCompleted: isCompleted
+                        isCompleted: isCompleted,
+                        status: isCompleted ? 'completed' : 'active'
                     };
                     
                     console.log(`  解析ID: ${task.id}, 类型: ${task.type}`);
@@ -2211,10 +2466,10 @@ class TaskManager {
                     }
                     
                     // 解析子任务（如果有）
-                    const subTasksMatch = taskContent.match(/子任务:\n([\s\S]*?)(?=\n[^-\s]|$)/);
+                    const subTasksMatch = taskContent.match(/- 子任务:\n([\s\S]*?)(?=\n  - [^-]|$)/);
                     if (subTasksMatch) {
                         const subTasksContent = subTasksMatch[1];
-                        const subTasksRegex = /- \[([x ])\] (.+)$/gm;
+                        const subTasksRegex = /    - \[([x ])\] (.+)$/gm;
                         const subTasks = [];
                         let subTaskMatch;
                         
@@ -3416,6 +3671,8 @@ class TaskListModal extends Modal {
         switch (taskType) {
             case "repeating":
                 tasks = this.plugin.taskManager.tasks.repeating;
+                // 过滤重复性任务：只显示当期应该执行的任务
+                tasks = this.filterRepeatingTasks(tasks);
                 break;
             case "oneTime":
                 tasks = this.plugin.taskManager.tasks.oneTime;
@@ -3511,6 +3768,16 @@ class TaskListModal extends Modal {
             // 操作按钮
             const actionContainer = taskItem.createEl("div", { cls: "yuhanbo-task-actions" });
             
+            // 详细按钮（所有任务都显示）
+            const detailButton = actionContainer.createEl("button", {
+                text: "详细",
+                cls: "yuhanbo-detail-button"
+            });
+            
+            detailButton.addEventListener("click", () => {
+                this.showTaskDetails(task);
+            });
+            
             // 未完成任务才显示操作按钮
             if (taskType !== "completed") {
                 // 完成按钮
@@ -3561,6 +3828,141 @@ class TaskListModal extends Modal {
         }
     }
     
+    /**
+     * 显示任务详细信息的模态框
+     * @param {Object} task - 任务对象
+     */
+    showTaskDetails(task) {
+        const modal = new Modal(this.app);
+        modal.contentEl.addClass("yuhanbo-task-detail-modal");
+        
+        // 标题
+        modal.contentEl.createEl("h2", { text: task.title });
+        
+        // 基本信息
+        const infoContainer = modal.contentEl.createDiv({ cls: "yuhanbo-task-detail-info" });
+        
+        // 任务类型
+        infoContainer.createEl("p", { 
+            text: `类型: ${task.type === "repeating" ? "重复任务" : "一次性任务"}` 
+        });
+        
+        // 周期信息（重复任务）
+        if (task.type === "repeating" && task.cycle) {
+            infoContainer.createEl("p", { 
+                text: `周期: ${this.plugin.taskManager.getCycleNameFromCycle(task.cycle)}` 
+            });
+        }
+        
+        // 进度
+        infoContainer.createEl("p", { text: `进度: ${task.progress}%` });
+        
+        // 创建日期
+        if (task.createdDate) {
+            infoContainer.createEl("p", { text: `创建日期: ${task.createdDate}` });
+        }
+        
+        // 截止日期
+        if (task.dueDate) {
+            infoContainer.createEl("p", { text: `截止日期: ${task.dueDate}` });
+        }
+        
+        // 执行日期（重复任务）
+        if (task.type === "repeating" && task.executeDate) {
+            infoContainer.createEl("p", { text: `执行日期: ${task.executeDate}` });
+        }
+        
+        // 标签
+        if (task.tags && task.tags.length > 0) {
+            const tagsText = task.tags.map(tag => `#${tag}`).join(" ");
+            infoContainer.createEl("p", { text: `标签: ${tagsText}` });
+        }
+        
+        // 描述
+        if (task.description && task.description.trim()) {
+            modal.contentEl.createEl("h3", { text: "描述" });
+            const descContainer = modal.contentEl.createDiv({ cls: "yuhanbo-task-description" });
+            descContainer.createEl("p", { text: task.description });
+        }
+        
+        // 子任务
+        if (task.subTasks && task.subTasks.length > 0) {
+            modal.contentEl.createEl("h3", { text: "子任务" });
+            const subTasksContainer = modal.contentEl.createDiv({ cls: "yuhanbo-subtasks-container" });
+            
+            task.subTasks.forEach(subTask => {
+                const subTaskItem = subTasksContainer.createDiv({ cls: "yuhanbo-subtask-item" });
+                const checkbox = subTask.completed ? "☑" : "☐";
+                subTaskItem.createEl("span", { text: `${checkbox} ${subTask.text}` });
+            });
+        }
+        
+        // 关闭按钮
+        const buttonContainer = modal.contentEl.createDiv({ cls: "yuhanbo-button-container" });
+        const closeButton = buttonContainer.createEl("button", {
+            text: "关闭",
+            cls: "yuhanbo-secondary-button"
+        });
+        
+        closeButton.addEventListener("click", () => {
+            modal.close();
+        });
+        
+        modal.open();
+    }
+
+    // 过滤重复性任务：只显示当期应该执行的任务
+    filterRepeatingTasks(tasks) {
+        const today = this.plugin.taskManager.getBJDate();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        return tasks.filter(task => {
+            // 检查截止日期，如果已过期则不显示
+            if (task.dueDate && task.dueDate < todayStr) {
+                console.log(`【调试】重复性任务 "${task.title}" 已过截止日期 ${task.dueDate}，不显示`);
+                return false;
+            }
+            
+            // 检查执行日期
+            if (!task.executeDate) {
+                console.log(`【调试】重复性任务 "${task.title}" 没有执行日期，显示`);
+                return true;
+            }
+            
+            const executeDate = task.executeDate;
+            
+            switch (task.cycle) {
+                case "daily":
+                    // 每日任务：只在当天显示
+                    const shouldShowDaily = executeDate <= todayStr;
+                    console.log(`【调试】每日任务 "${task.title}" 执行日期: ${executeDate}, 今天: ${todayStr}, 显示: ${shouldShowDaily}`);
+                    return shouldShowDaily;
+                    
+                case "weekly":
+                    // 每周任务：只在执行日期当天显示
+                    const shouldShowWeekly = executeDate === todayStr;
+                    console.log(`【调试】每周任务 "${task.title}" 执行日期: ${executeDate}, 今天: ${todayStr}, 显示: ${shouldShowWeekly}`);
+                    return shouldShowWeekly;
+                    
+                case "monthly":
+                    // 每月任务：只在执行日期当天显示
+                    const shouldShowMonthly = executeDate === todayStr;
+                    console.log(`【调试】每月任务 "${task.title}" 执行日期: ${executeDate}, 今天: ${todayStr}, 显示: ${shouldShowMonthly}`);
+                    return shouldShowMonthly;
+                    
+                case "yearly":
+                    // 每年任务：只在执行日期当天显示
+                    const shouldShowYearly = executeDate === todayStr;
+                    console.log(`【调试】每年任务 "${task.title}" 执行日期: ${executeDate}, 今天: ${todayStr}, 显示: ${shouldShowYearly}`);
+                    return shouldShowYearly;
+                    
+                default:
+                    console.log(`【调试】未知周期类型 "${task.cycle}"，默认显示任务 "${task.title}"`);
+                    return true;
+            }
+        });
+    }
+
     async confirmDelete(taskTitle) {
         return new Promise((resolve) => {
             const modal = new Modal(this.app);
