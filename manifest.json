@@ -5,6 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Obsidian 插件，用于任务管理和番茄时钟功能，包含 AI 智能拆分功能",
 	"author": "余汉波",
-	"authorUrl": "https://docs.sanrenjz.com",
+	"authorUrl": "https://github.com/yuhanbo758",
 	"isDesktopOnly": false
 }
