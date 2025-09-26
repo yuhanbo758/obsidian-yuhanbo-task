@@ -1,6 +1,6 @@
 {
 	"id": "obsidian-yuhanbo-task",
-	"name": "Yuhanbo Task",
+	"name": "obsidian-yuhanbo-task",
 	"version": "1.0.3",
 	"minAppVersion": "0.15.0",
 	"description": "Task management and Pomodoro timer plugin with AI-powered task splitting, supporting recurring tasks, one-time tasks, and productivity tracking",
