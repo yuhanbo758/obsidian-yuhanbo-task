@@ -1,6 +1,6 @@
 {
 	"name": "yuhanbo-task",
-	"version": "1.0.3",
+	"version": "1.1.0",
 	"description": "一个简单易用的任务管理插件，支持任务创建、编辑、删除和状态管理，帮助您高效管理待办事项。",
 	"main": "main.js",
 	"scripts": {
