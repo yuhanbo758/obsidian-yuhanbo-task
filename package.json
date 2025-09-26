@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-yuhanbo-task",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "Obsidian 插件，用于任务管理和番茄时钟功能，包含 AI 智能拆分功能",
 	"main": "main.js",
 	"scripts": {
