@@ -1,4 +1,51 @@
-# Obsidian 任务管理与番茄时钟插件
+# Yuhanbo Task - Obsidian Task Management & Pomodoro Timer Plugin
+
+[中文版本](#中文版本) | [English Version](#english-version)
+
+## English Version
+
+A comprehensive task management and Pomodoro timer plugin for Obsidian that helps you manage tasks efficiently and boost productivity using the Pomodoro Technique.
+
+### Key Features
+
+1. **Pomodoro Timer**
+   - Customizable work and break durations
+   - Automatic notifications for work and break periods
+   - Custom sound alerts
+
+2. **Task Management**
+   - Support for recurring and one-time tasks
+   - Categorization by year, month, week, and day
+   - Progress tracking
+   - Automatic archiving of completed tasks
+
+3. **AI-Powered Task Splitting**
+   - Integration with DeepSeek API
+   - Automatically split complex tasks into subtasks
+   - Customizable prompts
+
+### Usage
+
+#### Pomodoro Timer
+1. Click the clock icon in the sidebar or use "Start Pomodoro Timer" command
+2. Select or create a task in the popup window
+3. Work period ends with automatic break reminder
+4. Break ends with prompt to start next work cycle
+
+#### Task Management
+1. Configure three task folder paths in settings
+2. Use "Add New Task" command to create tasks
+3. Use "View All Tasks" command to view and manage tasks
+4. Set task progress, cycles, and deadlines
+
+#### AI Task Splitting
+1. Configure DeepSeek API Key and prompt file in settings
+2. Check "Use AI Smart Task Splitting" when creating tasks
+3. Click "Generate Subtasks" to automatically split current task
+
+---
+
+## 中文版本
 
 这是一个为 Obsidian 开发的任务管理和番茄时钟插件，可以帮助您更高效地管理任务并使用番茄工作法提高工作效率。
 

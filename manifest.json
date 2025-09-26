@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-yuhanbo-task",
-	"name": "yuhanbo-task",
+	"name": "Yuhanbo Task",
 	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
-	"description": "Obsidian 插件，用于任务管理和番茄时钟功能，包含 AI 智能拆分功能",
+	"description": "Task management and Pomodoro timer plugin with AI-powered task splitting, supporting recurring tasks, one-time tasks, and productivity tracking",
 	"author": "余汉波",
 	"authorUrl": "https://github.com/yuhanbo758",
 	"isDesktopOnly": false
