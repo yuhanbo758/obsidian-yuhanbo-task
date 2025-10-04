@@ -111,6 +111,7 @@ A comprehensive task management and Pomodoro timer plugin for Obsidian that help
 MIT
 
 
+
 ## 👨‍💻 作者信息
 
 **余汉波** - 编程爱好者-量化交易和效率工具开发
@@ -140,7 +141,7 @@ python 程序管理工具下载：[sanrenjz - 三人聚智-余汉波](https://ww
 
 ![三码合一](https://gdsx.sanrenjz.com/image/sanrenjz_yuhanbolh_yuhanbo758.png?imageSlim&t=1ab9b82c-e220-8022-beff-e265a194292a)
 
-![余汉波打赏码](https://gdsx.sanrenjz.com/PicGo/%E6%89%93%E8%B5%8F%E7%A0%81500.png)
+![余汉波打赏码](https://gdsx.sanrenjz.com/image/%E6%89%93%E8%B5%8F%E7%A0%81%E5%90%88%E4%B8%80.png?imageSlim)
 
 ## 🙏 致谢
 
@@ -148,4 +149,5 @@ python 程序管理工具下载：[sanrenjz - 三人聚智-余汉波](https://ww
 
 ---
 **⭐ 如果这个项目对您有帮助，请给它一个 Star！**
+
 
