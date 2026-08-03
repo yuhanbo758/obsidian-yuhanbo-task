@@ -1,5 +1,7 @@
 ﻿const { Plugin, Notice, PluginSettingTab, Setting, Modal, moment, normalizePath } = require('obsidian');
 
+const { Platform, requestUrl } = require('obsidian');
+
 // 默认设置
 const DEFAULT_SETTINGS = {
     apiKey: "",
@@ -469,7 +471,8 @@ class PomodoroTimer {
             console.log(`最终音频路径: ${normalizedPath}`);
             
             // 验证外部文件是否存在（仅对于本地文件系统路径）
-            if (/^[A-Za-z]:/.test(normalizedPath)) {
+            // Node.js 的 fs 模块仅在桌面端可用；移动端必须跳过外部文件系统检查。
+            if (Platform.isDesktopApp && /^[A-Za-z]:/.test(normalizedPath)) {
                 try {
                     const fs = require('fs');
                     const fileExists = fs.existsSync(normalizedPath);
@@ -1128,7 +1131,8 @@ class YuhanboTaskSettingTab extends PluginSettingTab {
                 console.log(`最终测试音频路径: ${normalizedPath}`);
                 
                 // 验证外部文件是否存在（仅对于本地文件系统路径）
-                if (/^[A-Za-z]:/.test(normalizedPath)) {
+                // Node.js 的 fs 模块仅在桌面端可用；移动端必须跳过外部文件系统检查。
+                if (Platform.isDesktopApp && /^[A-Za-z]:/.test(normalizedPath)) {
                     try {
                         const fs = require('fs');
                         const fileExists = fs.existsSync(normalizedPath);
@@ -3492,8 +3496,9 @@ class TaskModal extends Modal {
             }
         }
         
-        // 调用DeepSeek API
-        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        // 使用 Obsidian 官方 requestUrl 发起请求，避免桌面端和移动端的 CORS 差异。
+        const response = await requestUrl({
+            url: "https://api.deepseek.com/v1/chat/completions",
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -3515,11 +3520,11 @@ class TaskModal extends Modal {
             })
         });
         
-        if (!response.ok) {
+        if (response.status < 200 || response.status >= 300) {
             throw new Error(`API请求失败: ${response.status}`);
         }
         
-        const data = await response.json();
+        const data = response.json;
         const content = data.choices[0].message.content;
         
         // 解析返回的内容，提取子任务
@@ -4003,5 +4008,4 @@ class TaskListModal extends Modal {
 }
 
 module.exports = YuhanboTaskPlugin;
-
 
