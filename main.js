@@ -1,6 +1,6 @@
 ﻿const { Plugin, Notice, PluginSettingTab, Setting, Modal, moment, normalizePath } = require('obsidian');
 
-const { Platform, requestUrl } = require('obsidian');
+const { requestUrl } = require('obsidian');
 
 // 默认设置
 const DEFAULT_SETTINGS = {
@@ -470,21 +470,7 @@ class PomodoroTimer {
             normalizedPath = normalizedPath.replace(/\\/g, '/');
             console.log(`最终音频路径: ${normalizedPath}`);
             
-            // 验证外部文件是否存在（仅对于本地文件系统路径）
-            // Node.js 的 fs 模块仅在桌面端可用；移动端必须跳过外部文件系统检查。
-            if (Platform.isDesktopApp && /^[A-Za-z]:/.test(normalizedPath)) {
-                try {
-                    const fs = require('fs');
-                    const fileExists = fs.existsSync(normalizedPath);
-                    console.log(`外部文件检查: ${fileExists ? '存在' : '不存在'}`);
-                    if (!fileExists) {
-                        new Notice(`提示音文件不存在: ${normalizedPath}`);
-                        return;
-                    }
-                } catch (fsError) {
-                    console.log("无法检查文件系统:", fsError);
-                }
-            }
+            // 不直接访问系统文件；交由 Audio 的加载错误事件统一提示路径或格式问题。
             
             // 创建音频对象
             this.audio = new Audio(normalizedPath);
@@ -1130,21 +1116,7 @@ class YuhanboTaskSettingTab extends PluginSettingTab {
                 normalizedPath = normalizedPath.replace(/\\/g, '/');
                 console.log(`最终测试音频路径: ${normalizedPath}`);
                 
-                // 验证外部文件是否存在（仅对于本地文件系统路径）
-                // Node.js 的 fs 模块仅在桌面端可用；移动端必须跳过外部文件系统检查。
-                if (Platform.isDesktopApp && /^[A-Za-z]:/.test(normalizedPath)) {
-                    try {
-                        const fs = require('fs');
-                        const fileExists = fs.existsSync(normalizedPath);
-                        console.log(`外部文件检查: ${fileExists ? '存在' : '不存在'}`);
-                        if (!fileExists) {
-                            new Notice(`提示音文件不存在: ${normalizedPath}`);
-                            return;
-                        }
-                    } catch (fsError) {
-                        console.log("无法检查文件系统:", fsError);
-                    }
-                }
+                // 不直接访问系统文件；交由 Audio 的加载错误事件统一提示路径或格式问题。
                 
                 // 保存设置
                 this.plugin.settings.soundFilePath = testPath; // 保存原始输入
@@ -4008,4 +3980,3 @@ class TaskListModal extends Modal {
 }
 
 module.exports = YuhanboTaskPlugin;
-
