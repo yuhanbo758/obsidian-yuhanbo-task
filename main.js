@@ -3702,17 +3702,20 @@ class TaskListModal extends Modal {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 
                 let remainingText = "";
+                let executeDateClass = "yuhanbo-task-execute-date";
                 if (diffDays > 0) {
                     remainingText = `执行: ${task.executeDate} (还有${diffDays}天)`;
                 } else if (diffDays === 0) {
                     remainingText = `执行: 今天`;
+                    executeDateClass += " is-today";
                 } else {
                     remainingText = `执行: ${task.executeDate} (已过期${Math.abs(diffDays)}天)`;
+                    executeDateClass += " is-overdue";
                 }
                 
                 taskMeta.createEl("span", { 
                     text: remainingText, 
-                    cls: "yuhanbo-task-execute-date" 
+                    cls: executeDateClass
                 });
             } else if (task.type === "repeating" && 
                        task.cycle !== "daily" && task.executeDate) {

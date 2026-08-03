@@ -231,13 +231,13 @@
     font-weight: 500;
 }
 
-/* 任务过期样式 */
-.yuhanbo-task-execute-date:has(+ :contains("已过期")) {
+/* 任务过期样式：由渲染逻辑按日期差添加状态类，避免高开销的 :has 选择器。 */
+.yuhanbo-task-execute-date.is-overdue {
     color: var(--text-error);
 }
 
 /* 今天执行样式 */
-.yuhanbo-task-execute-date:has(+ :contains("今天")) {
+.yuhanbo-task-execute-date.is-today {
     color: var(--text-success);
     font-weight: bold;
 }
@@ -409,4 +409,4 @@
     .yuhanbo-button-container {
         flex-direction: column;
     }
-} 
+}
