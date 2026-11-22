@@ -1,6 +1,6 @@
 {
 	"name": "yuhanbo-task",
-	"version": "1.1.4",
+	"version": "1.1.5",
 	"description": "Manage one-time and recurring tasks, track progress, run Pomodoro timers, and optionally split tasks with DeepSeek.",
 	"main": "main.js",
 	"scripts": {
