@@ -38,6 +38,8 @@ After the plugin is accepted into the Obsidian community directory:
 3. Use **View all tasks** to edit tasks, update progress, or mark tasks as complete.
 4. Use the folder commands to open the Markdown files created by the plugin.
 
+For recurring tasks, **Complete this occurrence** archives the due occurrence and resets progress for the next scheduled date. Setting progress to 100% does the same. Completing a task late preserves its schedule, such as the 24th of every month. The task's end date still applies.
+
 ### Pomodoro timer
 
 1. Select the clock icon in the ribbon or run **Start Pomodoro timer**.
@@ -76,6 +78,8 @@ Yuhanbo Task 是一款 Obsidian 任务管理与番茄时钟插件。任务以 Ma
 - 将完成的任务归档为 Markdown 文件。
 - 提供可配置的番茄时钟和声音提醒。
 - 可选的 DeepSeek AI 任务拆分。
+
+重复任务的「完成本期」及 100% 进度只归档当前待办期次，下次仍按原周期排期，整个计划的截止日期继续生效。
 
 ### 隐私说明
 

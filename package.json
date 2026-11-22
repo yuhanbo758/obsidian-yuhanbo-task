@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "echo 'Development mode - files are already built'",
 		"build": "echo 'Build complete - using existing main.js'",
+		"test": "node --test tests/repeating-task.test.cjs",
 		"version": "node scripts/prepare-release.mjs --from-package && git add manifest.json versions.json package-lock.json"
 	},
 	"keywords": [
